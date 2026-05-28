@@ -25,9 +25,10 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material'
-import type { OrderType, ServiceOrderResponse } from '../types'
+import type { ComputerResponse, OrderType, ServiceOrderResponse } from '../types'
 import * as ordersApi from '../api/serviceOrders'
 import type { ServiceOrderRequest } from '../api/serviceOrders'
+import * as computersApi from '../api/computers'
 import ConfirmDialog from '../components/ConfirmDialog'
 
 // ── constants ────────────────────────────────────────────────────────────────
@@ -59,7 +60,7 @@ const now = () => {
   return d.toISOString().slice(0, 16)
 }
 
-const EMPTY_FORM: ServiceOrderRequest = { orderNumber: '', type: 'delivery', openedAt: now(), notes: '' }
+const EMPTY_FORM: ServiceOrderRequest = { orderNumber: '', type: 'delivery', openedAt: now(), notes: '', computerId: undefined }
 
 function EditIcon() {
   return (
@@ -96,6 +97,7 @@ export default function ServiceOrders() {
   const [deleting, setDeleting] = useState(false)
   const [closing, setClosing] = useState<number | null>(null)
   const [version, setVersion] = useState(0)
+  const [computers, setComputers] = useState<ComputerResponse[]>([])
 
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -111,6 +113,10 @@ export default function ServiceOrders() {
   const [form, setForm] = useState<ServiceOrderRequest>(EMPTY_FORM)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [closeId, setCloseId] = useState<number | null>(null)
+
+  useEffect(() => {
+    computersApi.getAll({ size: 200 }).then((d) => setComputers(d.content)).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -159,6 +165,7 @@ export default function ServiceOrders() {
       openedAt: o.openedAt.slice(0, 16),
       closedAt: o.closedAt?.slice(0, 16),
       notes: o.notes ?? '',
+      computerId: o.computer?.id,
     })
     setDialog({ open: true, mode: 'edit', id: o.id })
   }
@@ -286,7 +293,7 @@ export default function ServiceOrders() {
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: '#fafafa' }}>
-                {['Nº da Ordem', 'Tipo', 'Situação', 'Abertura', 'Encerramento', 'Observações', ''].map((h) => (
+                {['Nº da Ordem', 'Tipo', 'Computador', 'Situação', 'Abertura', 'Encerramento', 'Observações', ''].map((h) => (
                   <TableCell key={h} sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.72rem', py: 1.5, letterSpacing: 0.5 }}>
                     {h.toUpperCase()}
                   </TableCell>
@@ -297,7 +304,7 @@ export default function ServiceOrders() {
               {loading ? (
                 [...Array(rowsPerPage)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(7)].map((_, j) => (
+                    {[...Array(8)].map((_, j) => (
                       <TableCell key={j}>
                         <Skeleton height={24} />
                       </TableCell>
@@ -306,7 +313,7 @@ export default function ServiceOrders() {
                 ))
               ) : items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                  <TableCell colSpan={8} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
                     Nenhuma ordem encontrada.
                   </TableCell>
                 </TableRow>
@@ -321,6 +328,9 @@ export default function ServiceOrders() {
                       </TableCell>
                       <TableCell>
                         <Chip label={TYPE_LABELS[o.type as OrderType] ?? o.type} size="small" sx={{ bgcolor: tc.bg, color: tc.color, fontWeight: 600, fontSize: '0.72rem', height: 22 }} />
+                      </TableCell>
+                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.85rem', color: o.computer ? 'text.primary' : 'text.disabled' }}>
+                        {o.computer?.assetTag ?? '—'}
                       </TableCell>
                       <TableCell>
                         <Chip
@@ -394,6 +404,21 @@ export default function ServiceOrders() {
               <TextField label="Abertura *" type="datetime-local" value={form.openedAt} onChange={(e) => setField('openedAt', e.target.value)} size="small" slotProps={{ inputLabel: { shrink: true } }} />
               <TextField label="Encerramento" type="datetime-local" value={form.closedAt ?? ''} onChange={(e) => setField('closedAt', e.target.value)} size="small" slotProps={{ inputLabel: { shrink: true } }} />
             </Box>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Computador</InputLabel>
+              <Select
+                value={form.computerId ?? ''}
+                label="Computador"
+                onChange={(e) => setField('computerId', e.target.value ? Number(e.target.value) : undefined)}
+              >
+                <MenuItem value="">Nenhum</MenuItem>
+                {computers.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>
+                    {c.assetTag}{c.processor ? ` — ${c.processor}` : ''}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <TextField label="Observações" value={form.notes ?? ''} onChange={(e) => setField('notes', e.target.value)} size="small" multiline rows={3} fullWidth />
           </Box>
         </DialogContent>

@@ -7,6 +7,7 @@ export interface ServiceOrderRequest {
   openedAt: string
   closedAt?: string
   notes?: string
+  computerId?: number
 }
 
 export function getAll(params?: { type?: string; orderNumber?: string; open?: boolean } & PageParams) {

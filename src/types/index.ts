@@ -56,6 +56,7 @@ export interface ServiceOrderResponse {
   closedAt?: string
   notes?: string
   createdAt: string
+  computer?: ComputerResponse
 }
 
 export interface HistoryResponse {

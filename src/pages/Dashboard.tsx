@@ -294,7 +294,7 @@ export default function Dashboard() {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    {['Nº da Ordem', 'Tipo', 'Abertura', 'Observações'].map((h) => (
+                    {['Nº da Ordem', 'Tipo', 'Computador', 'Abertura', 'Observações'].map((h) => (
                       <TableCell key={h} sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.72rem' }}>
                         {h.toUpperCase()}
                       </TableCell>
@@ -315,6 +315,9 @@ export default function Dashboard() {
                             size="small"
                             sx={{ bgcolor: tc.bg, color: tc.color, fontWeight: 600, fontSize: '0.72rem', height: 22 }}
                           />
+                        </TableCell>
+                        <TableCell sx={{ color: 'text.secondary', fontSize: '0.85rem', fontFamily: 'monospace' }}>
+                          {order.computer?.assetTag ?? '—'}
                         </TableCell>
                         <TableCell sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
                           {fmtDate(order.openedAt)}
